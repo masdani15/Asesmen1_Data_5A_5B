@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asesmen Seru Kelas V - Pak Dani</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Quicksand', sans-serif; background: #e0f2fe; overflow-x: hidden; }
+        
+        /* Animasi Balon Melayang */
+        .balloon { position: absolute; bottom: -100px; width: 40px; height: 60px; border-radius: 50%; opacity: 0.5; z-index: -1; animation: float 12s infinite linear; }
+        @keyframes float { 0% { transform: translateY(0) rotate(0deg); } 100% { transform: translateY(-120vh) rotate(360deg); } }
+        
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); border: 2px solid white; }
+        
+        /* Gaya Radio Button Custom */
+        input[type="radio"]:checked + label { 
+            background-color: #3b82f6 !important; 
+            color: white !important; 
+            border-color: #1d4ed8 !important; 
+            transform: scale(1.02);
+        }
+
+        /* Kotak Data untuk nomor 6-10 */
+        .data-box { 
+            border: 2px dashed #3b82f6; 
+            background: #eff6ff; 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
+        th, td { border: 1px solid #bfdbfe; padding: 6px; text-align: center; }
+        th { background: #dbeafe; font-weight: bold; }
+        tr:nth-child(even) { background: #f8fafc; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-3 md:p-6">
+
+    <div id="balloon-container"></div>
+
+    <div id="app" class="glass p-6 md:p-10 rounded-3xl shadow-2xl w-full max-w-xl relative">
+        
+        <div id="step-login">
+            <div class="text-center mb-8">
+                <div class="inline-block p-4 bg-blue-100 rounded-full mb-3 text-4xl">📊</div>
+                <h1 class="text-3xl font-bold text-blue-600">Asesmen 1</h1>
+                <p class="text-gray-500 font-medium">Matematika: Pengumpulan Data</p>
+            </div>
+            
+            <div class="space-y-5">
+                <div>
+                    <label class="block font-bold mb-2 text-gray-700">Pilih Kelas:</label>
+                    <select id="select-kelas" class="w-full p-4 border-2 border-blue-100 rounded-2xl outline-none bg-white focus:border-blue-400 transition" onchange="updateNama()">
+                        <option value="">-- Pilih Kelas --</option>
+                        <option value="5A">Kelas 5A</option>
+                        <option value="5B">Kelas 5B</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold mb-2 text-gray-700">Pilih Namamu:</label>
+                    <select id="select-nama" class="w-full p-4 border-2 border-blue-100 rounded-2xl outline-none bg-white focus:border-blue-400 transition" disabled>
+                        <option value="">-- Pilih Nama --</option>
+                    </select>
+                </div>
+
+                <button onclick="startQuiz()" class="w-full bg-blue-500 text-white py-4 rounded-2xl font-black text-xl shadow-lg hover:bg-blue-600 active:scale-95 transition-all duration-200">
+                    MULAI SEKARANG 🚀
+                </button>
+            </div>
+        </div>
+
+        <div id="step-quiz" class="hidden">
+            <div id="data-context" class="data-box mb-6 p-4 rounded-2xl text-blue-900 hidden">
+                </div>
+
+            <div id="question-container">
+                <div id="q-text" class="text-lg md:text-xl font-bold mb-6 text-gray-800 leading-relaxed"></div>
+                <div id="options" class="space-y-3"></div>
+            </div>
+
+            <div class="mt-10 flex justify-between items-center border-t border-gray-100 pt-6">
+                <span id="progress" class="text-sm font-bold bg-blue-100 text-blue-600 px-4 py-2 rounded-full">Soal 1 / 10</span>
+                <button id="btn-next" onclick="nextQuestion()" class="bg-green-500 text-white px-10 py-3 rounded-2xl font-bold shadow-md hover:bg-green-600 active:scale-95 transition-all">
+                    Lanjut ➔
+                </button>
+            </div>
+        </div>
+
+        <div id="step-result" class="hidden text-center py-10">
+            <h2 class="text-4xl font-black text-blue-600 mb-2 font-serif italic">Hebat! ✨</h2>
+            <p class="text-gray-500 font-medium">Kamu sudah menyelesaikan Asesmen 1</p>
+            
+            <div class="my-10 relative">
+                <div id="final-score" class="text-9xl font-black text-orange-500 drop-shadow-xl italic">0</div>
+                <p class="text-gray-400 font-bold uppercase tracking-widest mt-2">Skor Kamu</p>
+            </div>
+
+            <div id="status-msg" class="bg-blue-50 text-blue-600 p-4 rounded-2xl inline-block font-bold animate-bounce">
+                Mengirim jawaban ke Pak Dani...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI BAWAH INI
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybL3oMiIuTTC4J24233n-9sB87UWQM000mdJH-AukkOjzpPhOqqSejYF3FjRhkYGoiPw/exec"; 
+
+        const students = {
+            "5A": ["ADI PUTRA ANDIKA", "ALFARO PUTRA MUSA", "ANDI AFDHALUL FAUZAN", "ANUGERAH INGAN", "AURA LATISHA IQRAM MALEWA", "DWI JULIA RAMADHANI", "FALERIANI ASESIATI", "GUMILAR FIRMANSYAH", "KRISTOFORUS DERIKO NANA", "MATIAS ALAN SIO PUTRA", "MUHAMMAD AZBIN AZIB", "MUHAMMAD DAFI", "NAUFAL AMIRUL MUJIB", "NUR AFNISARI", "NUR ALIYAH", "NURUL IBNU FAHIRAH", "RAISHA NAZIFA LUBIS", "RANDI FRANCISKUS SINURAT", "SEPTIANA TRISNA INUL", "SINTYA WELASARI", "SISI AGUSTINA", "YULIANA MAHUL"],
+            "5B": ["AHMAD MAULANA NURHUDA", "ARYA SHAPUTRA", "BAYU PRATAMA", "FITRA", "FITRI RAHMAWATI", "KRISTO IMMANUEL", "M. IRFAN K", "MARIANUS SIBU LAKA", "MASYA BUTARBUTAR", "MOLGAN SAPUTRA", "MUHAMMAD ALIF VERUL VAHMI", "MUHAMMAD ARI SANDI", "NIRMADANI", "NUR FADILAH", "NUR RAVINA TASYA HALIM", "RAHIM FEBRIANSYAH FADILLAH", "RHATU RIHANA", "SITI ANUGRAH", "Sul Fikal", "YOHANES NEYMAR DE PAMA", "YOHANES PUTRA JONGKOM", "ZHAKILA ADELIA PUTRY"]
+        };
+
+        const ctxDataMath = `<p class='font-bold mb-1'>📊 Data Nilai Ulangan:</p><p class='text-xs leading-loose tracking-[0.2em] bg-white p-2 rounded-lg border border-blue-100'>70, 80, 60, 90, 80, 90, 100, 80, 70, 50,<br>90, 80, 70, 80, 100, 70, 60, 80, 90, 70,<br>80, 90, 80, 70, 70, 90, 100, 80, 90, 50.</p>`;
+        
+        const ctxDataTable = `<p class='font-bold mb-1 text-center'>⚖️ Data Berat Badan (kg):</p><table><tr><th>No</th><th>Nama</th><th>BB</th><th>No</th><th>Nama</th><th>BB</th></tr><tr><td>1</td><td>Amel</td><td>36</td><td>6</td><td>Kania</td><td>37</td></tr><tr><td>2</td><td>Doni</td><td>40</td><td>7</td><td>Putri</td><td>38</td></tr><tr><td>3</td><td>Farhan</td><td>39</td><td>8</td><td>Tasya</td><td>39</td></tr><tr><td>4</td><td>Intan</td><td>38</td><td>9</td><td>Yusuf</td><td>36</td></tr><tr><td>5</td><td>Jihan</td><td>39</td><td>10</td><td>Zahra</td><td>38</td></tr></table>`;
+
+        const questions = [
+            { q: "Bu Ratih menimbang berat badan balita secara langsung di posyandu. Jenis data tersebut adalah...", o: ["data primer", "data kualitatif", "data sekunder", "data kuantitatif"], a: 0 },
+            { q: "Sinta memiliki data cita-cita teman sekelasnya. Berdasarkan sifatnya, data tersebut merupakan...", o: ["data primer", "data kualitatif", "data sekunder", "data kuantitatif"], a: 1 },
+            { q: "Dara mengukur berat badan teman satu per satu lalu mencatatnya. Cara ini disebut...", o: ["pengamatan langsung", "pengisian lembar isian", "pencatatan langsung", "wawancara"], a: 2 },
+            { q: "Fahmi bertanya satu per satu kepada teman tentang kegiatan belajar di rumah. Ini adalah cara...", o: ["tes", "wawancara", "pengamatan langsung", "pengisian lembar isian"], a: 1 },
+            { q: "Bu Ratna memberikan pertanyaan tertulis (angket) kepada siswanya. Cara ini disebut...", o: ["tes", "dokumentasi", "pengamatan langsung", "pengisian lembar isian"], a: 3 },
+            { q: "Siswa yang memperoleh nilai 90 sebanyak...", o: ["3 orang", "5 orang", "7 orang", "9 orang"], a: 2, ctx: ctxDataMath },
+            { q: "Siswa yang memperoleh nilai kurang dari 80 sebanyak...", o: ["14 orang", "13 orang", "12 orang", "11 orang"], a: 3, ctx: ctxDataMath },
+            { q: "Siswa yang memperoleh nilai tertinggi sebanyak...", o: ["3 orang", "4 orang", "5 orang", "6 orang"], a: 0, ctx: ctxDataMath },
+            { q: "Siswa yang memiliki berat badan 36 kg adalah...", o: ["Amel dan Kania", "Amel dan Yusuf", "Intan dan Yusuf", "Farhan dan Zahra"], a: 1, ctx: ctxDataTable },
+            { q: "Siswa yang memiliki berat badan lebih dari 37 kg sebanyak...", o: ["4 orang", "5 orang", "6 orang", "7 orang"], a: 3, ctx: ctxDataTable }
+        ];
+
+        let currentIdx = 0, score = 0, userData = {};
+
+        function updateNama() {
+            const kelas = document.getElementById('select-kelas').value;
+            const selectNama = document.getElementById('select-nama');
+            selectNama.innerHTML = '<option value="">-- Pilih Nama --</option>';
+            if (kelas) {
+                students[kelas].forEach(s => {
+                    let opt = document.createElement('option');
+                    opt.value = opt.text = s; selectNama.add(opt);
+                });
+                selectNama.disabled = false;
+            } else { selectNama.disabled = true; }
+        }
+
+        function startQuiz() {
+            userData.kelas = document.getElementById('select-kelas').value;
+            userData.nama = document.getElementById('select-nama').value;
+            
+            if (!userData.kelas || !userData.nama) {
+                return Swal.fire('Oops!', 'Pilih kelas dan namamu dulu ya!', 'warning');
+            }
+            
+            if (localStorage.getItem('done_math_' + userData.nama)) {
+                return Swal.fire('Sudah Selesai', 'Kamu sudah mengerjakan tugas ini sebelumnya.', 'info');
+            }
+
+            document.getElementById('step-login').classList.add('hidden');
+            document.getElementById('step-quiz').classList.remove('hidden');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentIdx];
+            const ctxBox = document.getElementById('data-context');
+            
+            // Tampilkan kotak data jika ada
+            if (q.ctx) { 
+                ctxBox.innerHTML = q.ctx; ctxBox.classList.remove('hidden'); 
+            } else { 
+                ctxBox.classList.add('hidden'); 
+            }
+
+            document.getElementById('q-text').innerText = `${currentIdx + 1}. ${q.q}`;
+            const optContainer = document.getElementById('options');
+            optContainer.innerHTML = '';
+            
+            q.o.forEach((opt, i) => {
+                optContainer.innerHTML += `
+                    <div>
+                        <input type="radio" name="answer" id="opt${i}" value="${i}" class="hidden">
+                        <label for="opt${i}" class="block border-2 border-gray-100 p-4 rounded-2xl bg-gray-50 font-bold text-gray-700 active:scale-95 transition-all cursor-pointer">
+                            ${String.fromCharCode(65+i)}. ${opt}
+                        </label>
+                    </div>`;
+            });
+            document.getElementById('progress').innerText = `Soal ${currentIdx + 1} / 10`;
+            if (currentIdx === questions.length - 1) document.getElementById('btn-next').innerText = "KIRIM SEKARANG";
+        }
+
+        function nextQuestion() {
+            const selected = document.querySelector('input[name="answer"]:checked');
+            if (!selected) {
+                return Swal.fire('Belum Dijawab!', 'Silakan pilih satu jawaban dulu.', 'info');
+            }
+
+            if (parseInt(selected.value) === questions[currentIdx].a) {
+                score += 10;
+            }
+
+            if (currentIdx < questions.length - 1) {
+                currentIdx++;
+                showQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function finishQuiz() {
+            document.getElementById('step-quiz').classList.add('hidden');
+            document.getElementById('step-result').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+
+            // Simpan data ke Google Sheets
+            fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify({ nama: userData.nama, kelas: userData.kelas, skor: score })
+            }).then(() => {
+                document.getElementById('status-msg').innerHTML = "✅ Jawaban berhasil dikirim ke Pak Dani!";
+                document.getElementById('status-msg').classList.remove('animate-bounce');
+                localStorage.setItem('done_math_' + userData.nama, 'true');
+                Swal.fire('Berhasil!', 'Nilai kamu sudah disimpan Pak Guru.', 'success');
+            }).catch(() => {
+                document.getElementById('status-msg').innerText = "Gagal mengirim, tapi skor sudah tersimpan di layar.";
+            });
+        }
+
+        // Animasi Balon Latar Belakang
+        const colors = ['#f87171', '#60a5fa', '#fbbf24', '#34d399', '#a78bfa'];
+        for(let i=0; i<12; i++) {
+            let b = document.createElement('div');
+            b.className = 'balloon';
+            b.style.left = Math.random() * 95 + 'vw';
+            b.style.background = colors[Math.floor(Math.random() * colors.length)];
+            b.style.animationDelay = Math.random() * 10 + 's';
+            document.getElementById('balloon-container').appendChild(b);
+        }
+    </script>
+</body>
+</html>
