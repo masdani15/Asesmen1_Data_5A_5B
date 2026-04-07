@@ -10,28 +10,11 @@
     
     <style>
         body { font-family: 'Quicksand', sans-serif; background: #e0f2fe; overflow-x: hidden; }
-        
-        /* Animasi Balon Melayang */
         .balloon { position: absolute; bottom: -100px; width: 40px; height: 60px; border-radius: 50%; opacity: 0.5; z-index: -1; animation: float 12s infinite linear; }
         @keyframes float { 0% { transform: translateY(0) rotate(0deg); } 100% { transform: translateY(-120vh) rotate(360deg); } }
-        
         .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); border: 2px solid white; }
-        
-        /* Gaya Radio Button Custom */
-        input[type="radio"]:checked + label { 
-            background-color: #3b82f6 !important; 
-            color: white !important; 
-            border-color: #1d4ed8 !important; 
-            transform: scale(1.02);
-        }
-
-        /* Kotak Data untuk nomor 6-10 */
-        .data-box { 
-            border: 2px dashed #3b82f6; 
-            background: #eff6ff; 
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-        }
-
+        input[type="radio"]:checked + label { background-color: #3b82f6 !important; color: white !important; border-color: #1d4ed8 !important; transform: scale(1.02); }
+        .data-box { border: 2px dashed #3b82f6; background: #eff6ff; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
         th, td { border: 1px solid #bfdbfe; padding: 6px; text-align: center; }
         th { background: #dbeafe; font-weight: bold; }
@@ -75,14 +58,11 @@
         </div>
 
         <div id="step-quiz" class="hidden">
-            <div id="data-context" class="data-box mb-6 p-4 rounded-2xl text-blue-900 hidden">
-                </div>
-
+            <div id="data-context" class="data-box mb-6 p-4 rounded-2xl text-blue-900 hidden"></div>
             <div id="question-container">
                 <div id="q-text" class="text-lg md:text-xl font-bold mb-6 text-gray-800 leading-relaxed"></div>
                 <div id="options" class="space-y-3"></div>
             </div>
-
             <div class="mt-10 flex justify-between items-center border-t border-gray-100 pt-6">
                 <span id="progress" class="text-sm font-bold bg-blue-100 text-blue-600 px-4 py-2 rounded-full">Soal 1 / 10</span>
                 <button id="btn-next" onclick="nextQuestion()" class="bg-green-500 text-white px-10 py-3 rounded-2xl font-bold shadow-md hover:bg-green-600 active:scale-95 transition-all">
@@ -94,12 +74,10 @@
         <div id="step-result" class="hidden text-center py-10">
             <h2 class="text-4xl font-black text-blue-600 mb-2 font-serif italic">Hebat! ✨</h2>
             <p class="text-gray-500 font-medium">Kamu sudah menyelesaikan Asesmen 1</p>
-            
             <div class="my-10 relative">
                 <div id="final-score" class="text-9xl font-black text-orange-500 drop-shadow-xl italic">0</div>
                 <p class="text-gray-400 font-bold uppercase tracking-widest mt-2">Skor Kamu</p>
             </div>
-
             <div id="status-msg" class="bg-blue-50 text-blue-600 p-4 rounded-2xl inline-block font-bold animate-bounce">
                 Mengirim jawaban ke Pak Dani...
             </div>
@@ -107,7 +85,6 @@
     </div>
 
     <script>
-        // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI BAWAH INI
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybL3oMiIuTTC4J24233n-9sB87UWQM000mdJH-AukkOjzpPhOqqSejYF3FjRhkYGoiPw/exec"; 
 
         const students = {
@@ -116,7 +93,6 @@
         };
 
         const ctxDataMath = `<p class='font-bold mb-1'>📊 Data Nilai Ulangan:</p><p class='text-xs leading-loose tracking-[0.2em] bg-white p-2 rounded-lg border border-blue-100'>70, 80, 60, 90, 80, 90, 100, 80, 70, 50,<br>90, 80, 70, 80, 100, 70, 60, 80, 90, 70,<br>80, 90, 80, 70, 70, 90, 100, 80, 90, 50.</p>`;
-        
         const ctxDataTable = `<p class='font-bold mb-1 text-center'>⚖️ Data Berat Badan (kg):</p><table><tr><th>No</th><th>Nama</th><th>BB</th><th>No</th><th>Nama</th><th>BB</th></tr><tr><td>1</td><td>Amel</td><td>36</td><td>6</td><td>Kania</td><td>37</td></tr><tr><td>2</td><td>Doni</td><td>40</td><td>7</td><td>Putri</td><td>38</td></tr><tr><td>3</td><td>Farhan</td><td>39</td><td>8</td><td>Tasya</td><td>39</td></tr><tr><td>4</td><td>Intan</td><td>38</td><td>9</td><td>Yusuf</td><td>36</td></tr><tr><td>5</td><td>Jihan</td><td>39</td><td>10</td><td>Zahra</td><td>38</td></tr></table>`;
 
         const questions = [
@@ -150,11 +126,9 @@
         function startQuiz() {
             userData.kelas = document.getElementById('select-kelas').value;
             userData.nama = document.getElementById('select-nama').value;
+            if (!userData.kelas || !userData.nama) return Swal.fire('Oops!', 'Pilih kelas dan namamu dulu ya!', 'warning');
             
-            if (!userData.kelas || !userData.nama) {
-                return Swal.fire('Oops!', 'Pilih kelas dan namamu dulu ya!', 'warning');
-            }
-            
+            // CEK APAKAH SUDAH TERKUNCI
             if (localStorage.getItem('done_math_' + userData.nama)) {
                 return Swal.fire('Sudah Selesai', 'Kamu sudah mengerjakan tugas ini sebelumnya.', 'info');
             }
@@ -167,26 +141,13 @@
         function showQuestion() {
             const q = questions[currentIdx];
             const ctxBox = document.getElementById('data-context');
-            
-            // Tampilkan kotak data jika ada
-            if (q.ctx) { 
-                ctxBox.innerHTML = q.ctx; ctxBox.classList.remove('hidden'); 
-            } else { 
-                ctxBox.classList.add('hidden'); 
-            }
-
+            if (q.ctx) { ctxBox.innerHTML = q.ctx; ctxBox.classList.remove('hidden'); } 
+            else { ctxBox.classList.add('hidden'); }
             document.getElementById('q-text').innerText = `${currentIdx + 1}. ${q.q}`;
             const optContainer = document.getElementById('options');
             optContainer.innerHTML = '';
-            
             q.o.forEach((opt, i) => {
-                optContainer.innerHTML += `
-                    <div>
-                        <input type="radio" name="answer" id="opt${i}" value="${i}" class="hidden">
-                        <label for="opt${i}" class="block border-2 border-gray-100 p-4 rounded-2xl bg-gray-50 font-bold text-gray-700 active:scale-95 transition-all cursor-pointer">
-                            ${String.fromCharCode(65+i)}. ${opt}
-                        </label>
-                    </div>`;
+                optContainer.innerHTML += `<div><input type="radio" name="answer" id="opt${i}" value="${i}" class="hidden"><label for="opt${i}" class="block border-2 border-gray-100 p-4 rounded-2xl bg-gray-50 font-bold text-gray-700 active:scale-95 transition-all cursor-pointer">${String.fromCharCode(65+i)}. ${opt}</label></div>`;
             });
             document.getElementById('progress').innerText = `Soal ${currentIdx + 1} / 10`;
             if (currentIdx === questions.length - 1) document.getElementById('btn-next').innerText = "KIRIM SEKARANG";
@@ -194,28 +155,23 @@
 
         function nextQuestion() {
             const selected = document.querySelector('input[name="answer"]:checked');
-            if (!selected) {
-                return Swal.fire('Belum Dijawab!', 'Silakan pilih satu jawaban dulu.', 'info');
-            }
-
-            if (parseInt(selected.value) === questions[currentIdx].a) {
-                score += 10;
-            }
-
-            if (currentIdx < questions.length - 1) {
-                currentIdx++;
-                showQuestion();
-            } else {
-                finishQuiz();
-            }
+            if (!selected) return Swal.fire('Belum Dijawab!', 'Silakan pilih satu jawaban dulu.', 'info');
+            if (parseInt(selected.value) === questions[currentIdx].a) score += 10;
+            if (currentIdx < questions.length - 1) { currentIdx++; showQuestion(); } 
+            else { finishQuiz(); }
         }
 
         function finishQuiz() {
+            // --- BAGIAN PENGUNCIAN KRUSIAL ---
+            // 1. Langsung kunci di HP siswa detik ini juga!
+            localStorage.setItem('done_math_' + userData.nama, 'true');
+
+            // 2. Ganti tampilan ke halaman skor
             document.getElementById('step-quiz').classList.add('hidden');
             document.getElementById('step-result').classList.remove('hidden');
             document.getElementById('final-score').innerText = score;
 
-            // Simpan data ke Google Sheets
+            // 3. Baru mulai proses pengiriman ke Spreadsheet
             fetch(SCRIPT_URL, {
                 method: "POST",
                 mode: "no-cors",
@@ -223,14 +179,12 @@
             }).then(() => {
                 document.getElementById('status-msg').innerHTML = "✅ Jawaban berhasil dikirim ke Pak Dani!";
                 document.getElementById('status-msg').classList.remove('animate-bounce');
-                localStorage.setItem('done_math_' + userData.nama, 'true');
                 Swal.fire('Berhasil!', 'Nilai kamu sudah disimpan Pak Guru.', 'success');
             }).catch(() => {
-                document.getElementById('status-msg').innerText = "Gagal mengirim, tapi skor sudah tersimpan di layar.";
+                document.getElementById('status-msg').innerText = "Sinyal lemah, tapi nilai sudah terkunci di sistem.";
             });
         }
 
-        // Animasi Balon Latar Belakang
         const colors = ['#f87171', '#60a5fa', '#fbbf24', '#34d399', '#a78bfa'];
         for(let i=0; i<12; i++) {
             let b = document.createElement('div');
